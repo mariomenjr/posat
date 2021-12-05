@@ -1,4 +1,6 @@
-import { TypeError } from "../errors/types.error";
+import SystemError from "../errors/system.error";
+import TypeError from "../errors/type.error";
+
 import { Fill, FillArray, FillSideEnum } from "./Exchange.models";
 
 export interface Block {
@@ -21,14 +23,53 @@ export class BlockArray extends Array<Block> {
 }
 
 export class PositionBlocks extends Array<BlockArray> {
-  constructor(public sizeUnit: string) {
-    super();
+  constructor(public sizeUnit: string, ...items: BlockArray[]) {
+    super(...items);
+
+    this.validateItems(...items);
   }
 
-  updateOrPush(fill: Fill) {
-    // const ba = this.at(-1);
+  private validateItems(...items: BlockArray[]) {
+    let isValid = true;
 
-    // TODO
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+
+      if (this.lastIndex === -1) continue;
+
+      isValid =
+        isValid &&
+        item.side !== this[this.lastIndex].side &&
+        (i === 0 || item.side !== items[i - 1]?.side);
+
+      if (!isValid)
+        throw SystemError.constraintViolated(
+          `No matching side BlockArray can be next to each other.`
+        );
+    }
+  }
+
+  public get lastIndex() {
+    return this.length - 1;
+  }
+
+  push(...items: BlockArray[]): number {
+    this.validateItems(...items);
+
+    return super.push(...items);
+  }
+
+  pushFill(fill: Fill) {
+    const hasAny = this.lastIndex > -1;
+    const isValid = this[this.lastIndex]?.side === fill.side;
+
+    if (!hasAny || !isValid) this.push(new BlockArray(fill.side));
+
+    this[this.lastIndex].push({
+      sizeUnit: fill.sizeUnit,
+      side: fill.side,
+      fills: [fill],
+    });
   }
 }
 
@@ -42,17 +83,15 @@ export interface Position {
 }
 
 class PositionBlocksMap extends Map<string, PositionBlocks> {
-
   private createPositionBlocksBySizeUnit(sizeUnit: string) {
     this.set(sizeUnit, new PositionBlocks(sizeUnit));
   }
 
   private fillPositionBlocks(fill: Fill) {
-    this.get(fill.sizeUnit)?.updateOrPush(fill);
+    this.get(fill.sizeUnit)?.pushFill(fill);
   }
 
   processFill(fill: Fill) {
-
     if (!this.has(fill.sizeUnit))
       this.createPositionBlocksBySizeUnit(fill.sizeUnit);
 
@@ -62,7 +101,7 @@ class PositionBlocksMap extends Map<string, PositionBlocks> {
 
 export class PositionBuilder {
   static buildPositions(fills: FillArray) {
-    console.debug({ fills });
+    // console.debug({ fills }); 
     
     const pbd = new PositionBlocksMap();
 
@@ -71,5 +110,7 @@ export class PositionBuilder {
 
       pbd.processFill(fill);
     }
+
+    console.debug({ pbd });
   }
 }
