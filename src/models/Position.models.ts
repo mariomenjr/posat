@@ -6,7 +6,7 @@ import { Fill, FillArray, FillSideEnum } from "./Exchange.models";
  * Represents aggrupation of Fills by @FillSideEnum.
  *
  * Contraints:
- * - Fill side must match Block side
+ * - Fills side must match Block side
  */
 class Block extends FillArray {
   private __size: number = 0;
@@ -23,10 +23,16 @@ class Block extends FillArray {
     return this.__size;
   }
 
+  /**
+   * Gets the total size of sizeUnit given the fills
+   */
   public get size() {
     return this._size;
   }
 
+  /**
+   * Calculate the breakEven price given the fills
+   */
   get breakEven() {
     return this.reduce<number>((weightedMean: number, fill: Fill) => {
       const weight = fill.size/this._size;
@@ -42,6 +48,7 @@ class Block extends FillArray {
       );
     }
 
+    // Keep _size updated for size prop getter
     this._size = this._size + items.reduce<number>((sizeTotal: number, fill: Fill) => sizeTotal + fill.size, 0);
 
     return super.push(...items);
@@ -79,7 +86,17 @@ class PositionBlocks extends Array<Block> {
 
       if (!isValid)
         throw SystemError.constraintViolated(
-          `No matching side BlockArray can be next to each other.`
+          `No matching side Block can be next to each other.`
+        );
+
+      isValid =
+        isValid &&
+        item.sizeUnit === this[this.lastIndex].sizeUnit &&
+        (i === 0 || item.sizeUnit === items[i - 1]?.sizeUnit);
+
+      if (!isValid)
+        throw SystemError.constraintViolated(
+          `All blocks must be of the same sizeUnit.`
         );
     }
   }
@@ -111,7 +128,7 @@ class PositionBlocks extends Array<Block> {
 
     this[this.lastIndex].push(fill);
 
-    console.debug(this[this.lastIndex].sizeUnit, this[this.lastIndex].size, this[this.lastIndex].side, this[this.lastIndex].breakEven);
+    // console.debug(this[this.lastIndex].sizeUnit, this[this.lastIndex].size, this[this.lastIndex].side, this[this.lastIndex].breakEven);
   }
 }
 
@@ -124,7 +141,7 @@ export interface Position {
   size: number;
   breakEven: number;
 
-  blocks: PositionBlocks;
+  // blocks: PositionBlocks;
 }
 
 class PositionBlocksMap extends Map<string, PositionBlocks> {
