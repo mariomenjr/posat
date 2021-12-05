@@ -3,12 +3,20 @@ import TypeError from "../errors/type.error";
 
 import { Fill, FillArray, FillSideEnum } from "./Exchange.models";
 
+/**
+ * Represents aggrupation of Fills by @FillSideEnum
+ */
 export interface Block {
   sizeUnit: string;
   side: FillSideEnum;
   fills: FillArray;
 }
 
+/**
+ * Represents an agrupation of Blocks. Constraints:
+ * 
+ * - No matching side BlockArray can be next to each other.
+ */
 export class BlockArray extends Array<Block> {
   constructor(public side: FillSideEnum) {
     super();
@@ -22,6 +30,9 @@ export class BlockArray extends Array<Block> {
   }
 }
 
+/**
+ * Comprises BlockArrays for a Position
+ */
 export class PositionBlocks extends Array<BlockArray> {
   constructor(public sizeUnit: string, ...items: BlockArray[]) {
     super(...items);
@@ -29,6 +40,12 @@ export class PositionBlocks extends Array<BlockArray> {
     this.validateItems(...items);
   }
 
+  /**
+   * Constraint items appended to the Array. Contraints: 
+   * 
+   * - No matching side BlockArray can be next to each other.
+   * @param items BlockArray items
+   */
   private validateItems(...items: BlockArray[]) {
     let isValid = true;
 
@@ -49,6 +66,9 @@ export class PositionBlocks extends Array<BlockArray> {
     }
   }
 
+  /**
+   * Get last index based on length of Array. Returns -1 if no items are present.
+   */
   public get lastIndex() {
     return this.length - 1;
   }
@@ -59,6 +79,12 @@ export class PositionBlocks extends Array<BlockArray> {
     return super.push(...items);
   }
 
+  /**
+   * Pushes fill into the last BlockArray.
+   * If the fill is not compatible, it creates and appends a new BlockArray.
+   * 
+   * @param fill Fill item
+   */
   pushFill(fill: Fill) {
     const hasAny = this.lastIndex > -1;
     const isValid = this[this.lastIndex]?.side === fill.side;
@@ -73,6 +99,9 @@ export class PositionBlocks extends Array<BlockArray> {
   }
 }
 
+/**
+ * Represents a Position
+ */
 export interface Position {
   sizeUnit: string;
 
@@ -99,8 +128,16 @@ class PositionBlocksMap extends Map<string, PositionBlocks> {
   }
 }
 
+/**
+ * Utility class to build positions
+ */
 export class PositionBuilder {
-  static buildPositions(fills: FillArray) {
+
+  /**
+   * Takes a list of fills to produce a list of positions
+   * @param fills List of fills
+   */
+  static buildPositions(fills: FillArray): Array<Position> {
     // console.debug({ fills }); 
     
     const pbd = new PositionBlocksMap();
@@ -111,6 +148,6 @@ export class PositionBuilder {
       pbd.processFill(fill);
     }
 
-    console.debug({ pbd });
+    return new Array<Position>();
   }
 }
