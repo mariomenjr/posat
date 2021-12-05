@@ -1,52 +1,70 @@
 import SystemError from "../errors/system.error";
-import TypeError from "../errors/type.error";
 
 import { Fill, FillArray, FillSideEnum } from "./Exchange.models";
 
 /**
- * Represents aggrupation of Fills by @FillSideEnum
+ * Represents aggrupation of Fills by @FillSideEnum.
+ *
+ * Contraints:
+ * - Fill side must match Block side
  */
-export interface Block {
-  sizeUnit: string;
-  side: FillSideEnum;
-  fills: FillArray;
-}
+class Block extends FillArray {
+  private __size: number = 0;
 
-/**
- * Represents an agrupation of Blocks. Constraints:
- * 
- * - No matching side BlockArray can be next to each other.
- */
-export class BlockArray extends Array<Block> {
-  constructor(public side: FillSideEnum) {
+  constructor(public side: FillSideEnum, public sizeUnit: string) {
     super();
   }
 
-  push(...items: Block[]): number {
+  private set _size(_size: number) {
+    this.__size = this.__size + _size;
+  }
+
+  private get _size() {
+    return this.__size;
+  }
+
+  public get size() {
+    return this._size;
+  }
+
+  get breakEven() {
+    return this.reduce<number>((weightedMean: number, fill: Fill) => {
+      const weight = fill.size/this._size;
+      
+      return weightedMean + (fill.price * weight);
+    }, 0);
+  }
+
+  push(...items: Fill[]): number {
     if (!items.every((x) => x.side === this.side)) {
-      throw TypeError.invalidType(`Fill side does not match Block side`);
+      throw SystemError.constraintViolated(
+        `Fill side does not match Block side`
+      );
     }
+
+    this._size = this._size + items.reduce<number>((sizeTotal: number, fill: Fill) => sizeTotal + fill.size, 0);
+
     return super.push(...items);
   }
 }
 
 /**
- * Comprises BlockArrays for a Position
+ * Comprises Blocks for a Position
  */
-export class PositionBlocks extends Array<BlockArray> {
-  constructor(public sizeUnit: string, ...items: BlockArray[]) {
+class PositionBlocks extends Array<Block> {
+  constructor(public sizeUnit: string, ...items: Block[]) {
     super(...items);
 
-    this.validateItems(...items);
+    this._validateItems(...items);
   }
 
   /**
-   * Constraint items appended to the Array. Contraints: 
-   * 
-   * - No matching side BlockArray can be next to each other.
-   * @param items BlockArray items
+   * Constraint items appended to the Array. Contraints:
+   *
+   * - No matching side Block can be next to each other.
+   * @param items Block items
    */
-  private validateItems(...items: BlockArray[]) {
+  private _validateItems(...items: Block[]) {
     let isValid = true;
 
     for (let i = 0; i < items.length; i++) {
@@ -73,29 +91,27 @@ export class PositionBlocks extends Array<BlockArray> {
     return this.length - 1;
   }
 
-  push(...items: BlockArray[]): number {
-    this.validateItems(...items);
+  push(...items: Block[]): number {
+    this._validateItems(...items);
 
     return super.push(...items);
   }
 
   /**
-   * Pushes fill into the last BlockArray.
-   * If the fill is not compatible, it creates and appends a new BlockArray.
-   * 
+   * Pushes fill into the last Block.
+   * If the fill is not compatible, it creates and appends a new Block.
+   *
    * @param fill Fill item
    */
   pushFill(fill: Fill) {
     const hasAny = this.lastIndex > -1;
     const isValid = this[this.lastIndex]?.side === fill.side;
 
-    if (!hasAny || !isValid) this.push(new BlockArray(fill.side));
+    if (!hasAny || !isValid) this.push(new Block(fill.side, fill.sizeUnit));
 
-    this[this.lastIndex].push({
-      sizeUnit: fill.sizeUnit,
-      side: fill.side,
-      fills: [fill],
-    });
+    this[this.lastIndex].push(fill);
+
+    console.debug(this[this.lastIndex].sizeUnit, this[this.lastIndex].size, this[this.lastIndex].side, this[this.lastIndex].breakEven);
   }
 }
 
@@ -112,19 +128,19 @@ export interface Position {
 }
 
 class PositionBlocksMap extends Map<string, PositionBlocks> {
-  private createPositionBlocksBySizeUnit(sizeUnit: string) {
+  private _createPositionBlocksBySizeUnit(sizeUnit: string) {
     this.set(sizeUnit, new PositionBlocks(sizeUnit));
   }
 
-  private fillPositionBlocks(fill: Fill) {
+  private _fillPositionBlocks(fill: Fill) {
     this.get(fill.sizeUnit)?.pushFill(fill);
   }
 
   processFill(fill: Fill) {
     if (!this.has(fill.sizeUnit))
-      this.createPositionBlocksBySizeUnit(fill.sizeUnit);
+      this._createPositionBlocksBySizeUnit(fill.sizeUnit);
 
-    this.fillPositionBlocks(fill);
+    this._fillPositionBlocks(fill);
   }
 }
 
@@ -132,14 +148,13 @@ class PositionBlocksMap extends Map<string, PositionBlocks> {
  * Utility class to build positions
  */
 export class PositionBuilder {
-
   /**
    * Takes a list of fills to produce a list of positions
    * @param fills List of fills
    */
   static buildPositions(fills: FillArray): Array<Position> {
-    // console.debug({ fills }); 
-    
+    // console.debug({ fills });
+
     const pbd = new PositionBlocksMap();
 
     for (let i = 0; i < fills.length; i++) {
@@ -147,6 +162,8 @@ export class PositionBuilder {
 
       pbd.processFill(fill);
     }
+
+    // console.debug({ pbd });
 
     return new Array<Position>();
   }
