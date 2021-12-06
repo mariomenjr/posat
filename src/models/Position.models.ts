@@ -106,7 +106,7 @@ class PositionBlocks extends Array<Block> {
 
       if (!isValid)
         throw SystemError.constraintViolated(
-          `No matching side Block can be next to each other.`
+          `[${this.sizeUnit}]. No matching side Block can be next to each other.`
         );
 
       isValid =
@@ -116,7 +116,7 @@ class PositionBlocks extends Array<Block> {
 
       if (!isValid)
         throw SystemError.constraintViolated(
-          `All blocks must be of the same sizeUnit.`
+          `[${this.sizeUnit}]. All blocks must be of the same sizeUnit.`
         );
     }
   }
@@ -161,7 +161,7 @@ class PositionBlocks extends Array<Block> {
         if (currentIndex === 0) {
           if (block.side !== FillSideEnum.BUY) {
             throw SystemError.notSupported(
-              `A ${block.side} block in the first position is not supported. Check fills for ${block.sizeUnit}.`
+              `[${block.sizeUnit}] A ${block.side} block in the first position is not supported.`
             );
           }
           return {
@@ -199,7 +199,8 @@ class PositionBlocks extends Array<Block> {
     );
 
     p.size = Math.abs(Math.round((p.size + Number.EPSILON) * 10000) / 10000);
-    p.breakEven = Math.round((p.breakEven + Number.EPSILON) * 100000000) / 100000000
+    p.breakEven =
+      Math.round((p.breakEven + Number.EPSILON) * 100000000) / 100000000;
 
     return p;
   }
@@ -230,14 +231,14 @@ class PositionBlocksMap extends Map<string, PositionBlocks> {
     this._fillPositionBlocks(fill);
   }
 
-  calculatePositions(): Position[] {
-    const positions: Position[] = [];
+  calculatePositions(): (Position | Error)[] {
+    const positions: (Position | Error)[] = [];
 
-    for (const [sizeUnit, positionBlocks] of this) {
+    for (const [, positionBlocks] of this) {
       try {
         positions.push(positionBlocks.calculatePosition());
       } catch (error) {
-        console.error(sizeUnit, (error as Error).message);
+        positions.push(error as Error);
       }
     }
 
@@ -253,14 +254,10 @@ export class PositionBuilder {
    * Takes a list of fills to produce a list of positions
    * @param fills List of fills
    */
-  static buildPositions(fills: FillArray): Array<Position> {
+  static buildPositions(fills: FillArray): Array<Position | Error> {
     const pbd = new PositionBlocksMap();
 
-    for (let i = 0; i < fills.length; i++) {
-      const fill = fills[i];
-
-      pbd.processFill(fill);
-    }
+    for (let i = 0; i < fills.length; i++) pbd.processFill(fills[i]);
 
     return pbd.calculatePositions();
   }
