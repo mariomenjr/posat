@@ -9,7 +9,7 @@ export default class CsvUtils {
       const fills: FillArray = new FillArray();
 
       // TODO: We may want to read all fills files available.
-      fs.createReadStream(`./fills/fills.20211203.csv`)
+      fs.createReadStream(`./fills/fills.20211205.csv`)
         .pipe(
           csv({
             skipLines: 1,

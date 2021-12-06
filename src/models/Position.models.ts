@@ -1,6 +1,7 @@
+import { FillError } from "../errors/fill.error";
 import SystemError from "../errors/system.error";
 
-import { Fill, FillArray, FillSideEnum } from "./Exchange.models";
+import { Fill, FillArray, FillSideEnum, FillProps } from "./Exchange.models";
 
 /**
  * Represents aggrupation of Fills by @FillSideEnum.
@@ -8,37 +9,59 @@ import { Fill, FillArray, FillSideEnum } from "./Exchange.models";
  * Contraints:
  * - Fills side must match Block side
  */
-class Block extends FillArray {
-  private __size: number = 0;
-
+class Block extends FillArray implements FillProps {
   constructor(public side: FillSideEnum, public sizeUnit: string) {
     super();
-  }
-
-  private set _size(_size: number) {
-    this.__size = this.__size + _size;
-  }
-
-  private get _size() {
-    return this.__size;
   }
 
   /**
    * Gets the total size of sizeUnit given the fills
    */
   public get size() {
-    return this._size;
+    return this.reduce<number>((size: number, fill: Fill) => {
+      switch (fill.side) {
+        case FillSideEnum.BUY:
+          return size + fill.size;
+
+        case FillSideEnum.SELL:
+          return size - fill.size;
+
+        default:
+          throw FillError.fillSideNotSupported(fill.side, fill.sizeUnit);
+      }
+    }, 0);
+  }
+
+  public get fee() {
+    return this.reduce<number>((fee: number, fill: Fill) => {
+      switch (fill.side) {
+        case FillSideEnum.BUY:
+          return fee + fill.fee;
+
+        case FillSideEnum.SELL:
+          return fee - fill.fee;
+
+        default:
+          throw FillError.fillSideNotSupported(fill.side, fill.sizeUnit);
+      }
+    }, 0);
   }
 
   /**
    * Calculate the breakEven price given the fills
    */
-  get breakEven() {
+  get price() {
+    const blockAbsSize = Math.abs(this.size);
+
     return this.reduce<number>((weightedMean: number, fill: Fill) => {
-      const weight = fill.size/this._size;
-      
-      return weightedMean + (fill.price * weight);
+      const weight = fill.size / blockAbsSize;
+
+      return weightedMean + fill.price * weight;
     }, 0);
+  }
+
+  get total() {
+    return this.price * this.size;
   }
 
   push(...items: Fill[]): number {
@@ -47,9 +70,6 @@ class Block extends FillArray {
         `Fill side does not match Block side`
       );
     }
-
-    // Keep _size updated for size prop getter
-    this._size = this._size + items.reduce<number>((sizeTotal: number, fill: Fill) => sizeTotal + fill.size, 0);
 
     return super.push(...items);
   }
@@ -108,6 +128,12 @@ class PositionBlocks extends Array<Block> {
     return this.length - 1;
   }
 
+  public get size() {
+    return this.reduce<number>((s: number, b: Block) => {
+      return s + b.size;
+    }, 0);
+  }
+
   push(...items: Block[]): number {
     this._validateItems(...items);
 
@@ -127,8 +153,55 @@ class PositionBlocks extends Array<Block> {
     if (!hasAny || !isValid) this.push(new Block(fill.side, fill.sizeUnit));
 
     this[this.lastIndex].push(fill);
+  }
 
-    // console.debug(this[this.lastIndex].sizeUnit, this[this.lastIndex].size, this[this.lastIndex].side, this[this.lastIndex].breakEven);
+  calculatePosition(): Position {
+    const p = this.reduce<Position>(
+      (position: Position, block: Block, currentIndex: number): Position => {
+        if (currentIndex === 0) {
+          if (block.side !== FillSideEnum.BUY) {
+            throw SystemError.notSupported(
+              `A ${block.side} block in the first position is not supported. Check fills for ${block.sizeUnit}.`
+            );
+          }
+          return {
+            ...position,
+            breakEven: block.price,
+            size: block.size,
+          };
+        }
+
+        switch (block.side) {
+          case FillSideEnum.BUY:
+            const accumulatedSize = position.size + block.size;
+
+            position.breakEven =
+              block.price * (block.size / accumulatedSize) +
+              position.breakEven * (position.size / accumulatedSize);
+            position.size = accumulatedSize;
+            break;
+
+          case FillSideEnum.SELL:
+            position.size += block.size;
+            break;
+
+          default:
+            throw FillError.fillSideNotSupported(block.side, block.sizeUnit);
+        }
+
+        return { ...position };
+      },
+      {
+        breakEven: 0,
+        size: 0,
+        sizeUnit: this.sizeUnit,
+      }
+    );
+
+    p.size = Math.abs(Math.round((p.size + Number.EPSILON) * 10000) / 10000);
+    p.breakEven = Math.round((p.breakEven + Number.EPSILON) * 100000000) / 100000000
+
+    return p;
   }
 }
 
@@ -136,12 +209,9 @@ class PositionBlocks extends Array<Block> {
  * Represents a Position
  */
 export interface Position {
-  sizeUnit: string;
-
+  readonly sizeUnit: string;
   size: number;
   breakEven: number;
-
-  // blocks: PositionBlocks;
 }
 
 class PositionBlocksMap extends Map<string, PositionBlocks> {
@@ -159,6 +229,20 @@ class PositionBlocksMap extends Map<string, PositionBlocks> {
 
     this._fillPositionBlocks(fill);
   }
+
+  calculatePositions(): Position[] {
+    const positions: Position[] = [];
+
+    for (const [sizeUnit, positionBlocks] of this) {
+      try {
+        positions.push(positionBlocks.calculatePosition());
+      } catch (error) {
+        console.error(sizeUnit, (error as Error).message);
+      }
+    }
+
+    return positions;
+  }
 }
 
 /**
@@ -170,8 +254,6 @@ export class PositionBuilder {
    * @param fills List of fills
    */
   static buildPositions(fills: FillArray): Array<Position> {
-    // console.debug({ fills });
-
     const pbd = new PositionBlocksMap();
 
     for (let i = 0; i < fills.length; i++) {
@@ -180,8 +262,6 @@ export class PositionBuilder {
       pbd.processFill(fill);
     }
 
-    // console.debug({ pbd });
-
-    return new Array<Position>();
+    return pbd.calculatePositions();
   }
 }

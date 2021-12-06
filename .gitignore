@@ -1,3 +1,6 @@
+# Fills
+fills/*.csv
+
 # Logs
 logs
 *.log

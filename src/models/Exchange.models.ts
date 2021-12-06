@@ -1,14 +1,18 @@
-export interface Fill {
+export interface FillProps {
+  side: FillSideEnum,
+  size: number,
+  sizeUnit: string,
+  price: number;
+  fee: number;
+  total: number;
+}
+
+export interface Fill extends FillProps {
   portfolio: string;
   tradeId: number;
   product: string;
   side: FillSideEnum;
   createdAt: Date;
-  size: number;
-  sizeUnit: string;
-  price: number;
-  fee: number;
-  total: number;
   fiatUnit: string;
 }
 
