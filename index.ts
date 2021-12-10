@@ -4,33 +4,55 @@ import CsvUtils from "./src/utils/csv.utils";
 
 import { FillArray } from "./src/models/Exchange.models";
 import { Position, PositionBuilder } from "./src/models/Position.models";
+import { roundByDecimals } from "./src/utils/math.utils";
 
 CsvUtils.readFills()
   .then((fills: FillArray) => {
-    const table = new Table({
-      head: [`Unit`, `Size`, `Break Even`],
-      colWidths: [15, 30, 30],
+    const positionsTable = new Table({
+      head: [
+        `Unit`,
+        `Size`,
+        `Break Even Entry`,
+        `Break Even`,
+        `Portfolio Share %`,
+      ],
+      colWidths: [15, 15, 20, 30],
     });
 
-    PositionBuilder.buildPositions(fills).forEach((x) => {
-      const isError = x.constructor.name.toLowerCase().endsWith(`error`);
+    const positions = PositionBuilder.buildPositions(fills)
+      .filter((x) => {
+        const isError = x.constructor.name.toLowerCase().endsWith(`error`);
+        return !isError && (x as Position).size > 0;
+      })
+      .map((x) => x as Position);
 
-      if (isError)
-        table.push([
-          {
-            colSpan: table.options.colWidths.length,
-            content: (x as Error).message,
-          },
-        ]);
-      else
-        table.push([
-          (x as Position).sizeUnit,
-          (x as Position).size,
-          (x as Position).breakEven,
-        ]);
+    const breakEven = roundByDecimals(
+      positions.reduce<number>(
+        (t: number, x: Position) => x.breakEven * x.size + t,
+        0
+      ),
+      2
+    );
+
+    positions.forEach((x) => {
+      const _breakEven = roundByDecimals(x.size * x.breakEven, 2);
+      positionsTable.push([
+        x.sizeUnit,
+        x.size,
+        x.breakEven,
+        `$ ${_breakEven}`,
+        `${roundByDecimals((_breakEven/breakEven)*100, 2)} %`
+      ])
     });
 
-    console.debug(table.toString());
+    const summaryTable = new Table({
+      head: [`Break Even`],
+    });
+
+    summaryTable.push([`$ ${breakEven}`]);
+
+    console.log(positionsTable.toString());
+    console.log(summaryTable.toString());
   })
   .catch((e: Error) => {
     console.error(e.message);

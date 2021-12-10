@@ -1,7 +1,7 @@
 import csv from "csv-parser";
 import fs from "fs";
 
-import { FillArray, FillSideEnum, Fill } from "./../models/Exchange.models";
+import { FillArray, Fill } from "./../models/Exchange.models";
 
 export default class CsvUtils {
   static readFills(): Promise<FillArray> {
@@ -9,13 +9,13 @@ export default class CsvUtils {
       const fills: FillArray = new FillArray();
 
       // TODO: We may want to read all fills files available.
-      fs.createReadStream(`./fills/fills.20211205.csv`)
+      fs.createReadStream(`./fills/fills.20211205.1247.csv`)
         .pipe(
           csv({
             skipLines: 1,
             strict: true,
             headers: [
-              `portfolion`,
+              `portfolio`,
               `tradeId`,
               `product`,
               `side`,

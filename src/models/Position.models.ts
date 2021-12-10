@@ -1,5 +1,6 @@
 import { FillError } from "../errors/fill.error";
 import SystemError from "../errors/system.error";
+import { roundByDecimals } from "../utils/math.utils";
 
 import { Fill, FillArray, FillSideEnum, FillProps } from "./Exchange.models";
 
@@ -160,9 +161,12 @@ class PositionBlocks extends Array<Block> {
       (position: Position, block: Block, currentIndex: number): Position => {
         if (currentIndex === 0) {
           if (block.side !== FillSideEnum.BUY) {
-            throw SystemError.notSupported(
-              `[${block.sizeUnit}] A ${block.side} block in the first position is not supported.`
-            );
+            return { ...position }
+            // Ignore first SELL fills. Why? Revisit.
+            // 
+            // throw SystemError.notSupported(
+            //   `[${block.sizeUnit}] A ${block.side} block in the first position is not supported.`
+            // );
           }
           return {
             ...position,
@@ -198,9 +202,8 @@ class PositionBlocks extends Array<Block> {
       }
     );
 
-    p.size = Math.abs(Math.round((p.size + Number.EPSILON) * 10000) / 10000);
-    p.breakEven =
-      Math.round((p.breakEven + Number.EPSILON) * 100000000) / 100000000;
+    p.size = Math.abs(roundByDecimals(p.size, 4));
+    p.breakEven = roundByDecimals(p.breakEven, 8);
 
     return p;
   }
@@ -232,11 +235,12 @@ class PositionBlocksMap extends Map<string, PositionBlocks> {
   }
 
   calculatePositions(): (Position | Error)[] {
+    const excludes: string[] = [`USDT`, `USDC`];
     const positions: (Position | Error)[] = [];
 
-    for (const [, positionBlocks] of this) {
+    for (const [sizeUnit, positionBlocks] of this) {
       try {
-        positions.push(positionBlocks.calculatePosition());
+        if (!excludes.includes(sizeUnit)) positions.push(positionBlocks.calculatePosition()); 
       } catch (error) {
         positions.push(error as Error);
       }
