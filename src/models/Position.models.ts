@@ -161,9 +161,9 @@ class PositionBlocks extends Array<Block> {
       (position: Position, block: Block, currentIndex: number): Position => {
         if (currentIndex === 0) {
           if (block.side !== FillSideEnum.BUY) {
-            return { ...position }
+            return { ...position };
             // Ignore first SELL fills. Why? Revisit.
-            // 
+            //
             // throw SystemError.notSupported(
             //   `[${block.sizeUnit}] A ${block.side} block in the first position is not supported.`
             // );
@@ -218,6 +218,20 @@ export interface Position {
   breakEven: number;
 }
 
+export class PositionArray extends Array<Position> {
+  errors: Error[] = [];
+
+  public get breakEven(): number {
+    return roundByDecimals(
+      this.reduce<number>(
+        (t: number, x: Position) => x.breakEven * x.size + t,
+        0
+      ),
+      2
+    );
+  }
+}
+
 class PositionBlocksMap extends Map<string, PositionBlocks> {
   private _createPositionBlocksBySizeUnit(sizeUnit: string) {
     this.set(sizeUnit, new PositionBlocks(sizeUnit));
@@ -234,15 +248,16 @@ class PositionBlocksMap extends Map<string, PositionBlocks> {
     this._fillPositionBlocks(fill);
   }
 
-  calculatePositions(): (Position | Error)[] {
+  buildPositions(): PositionArray {
     const excludes: string[] = [`USDT`, `USDC`];
-    const positions: (Position | Error)[] = [];
+    const positions: PositionArray = new PositionArray();
 
     for (const [sizeUnit, positionBlocks] of this) {
       try {
-        if (!excludes.includes(sizeUnit)) positions.push(positionBlocks.calculatePosition()); 
+        if (!excludes.includes(sizeUnit))
+          positions.push(positionBlocks.calculatePosition());
       } catch (error) {
-        positions.push(error as Error);
+        positions.errors.push(error as Error);
       }
     }
 
@@ -258,11 +273,11 @@ export class PositionBuilder {
    * Takes a list of fills to produce a list of positions
    * @param fills List of fills
    */
-  static buildPositions(fills: FillArray): Array<Position | Error> {
+  static buildPositions(fills: FillArray): PositionArray {
     const pbd = new PositionBlocksMap();
 
     for (let i = 0; i < fills.length; i++) pbd.processFill(fills[i]);
 
-    return pbd.calculatePositions();
+    return pbd.buildPositions();
   }
 }
