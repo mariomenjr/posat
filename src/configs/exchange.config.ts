@@ -10,3 +10,7 @@ export class ExchangesConfig {
     };
   }
 }
+
+export enum ExchangesSupported {
+  Coinbase = `coinbase`,
+}

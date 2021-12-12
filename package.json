@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "ts-node index.ts",
+    "dev:exchange": "ts-node index.ts exchange",
+    "dev:csv": "ts-node index.ts csv",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

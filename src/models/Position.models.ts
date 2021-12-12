@@ -1,8 +1,9 @@
-import { FillError } from "../errors/fill.error";
 import SystemError from "../errors/system.error";
+import { FillError } from "../errors/fill.error";
+
 import { roundByDecimals } from "../utils/math.utils";
 
-import { Fill, FillArray, FillSideEnum, FillProps } from "./Exchange.models";
+import { Fill, FillArray, FillSideEnum, FillProps } from "./Fill.models";
 
 /**
  * Represents aggrupation of Fills by @FillSideEnum.
@@ -274,6 +275,8 @@ export class PositionBuilder {
    * @param fills List of fills
    */
   static buildPositions(fills: FillArray): PositionArray {
+    fills.sort((a: Fill, b: Fill) => a.createdAt.getTime() - b.createdAt.getTime());
+
     const pbd = new PositionBlocksMap();
 
     for (let i = 0; i < fills.length; i++) pbd.processFill(fills[i]);

@@ -1,7 +1,7 @@
-import csv from "csv-parser";
 import fs from "fs";
+import csv from "csv-parser";
 
-import { FillArray, Fill } from "./../models/Exchange.models";
+import { FillArray, Fill } from "../models/Fill.models";
 
 export default class CsvUtils {
   static readFills(fileOrFolderPath: string): Promise<FillArray> {
@@ -45,7 +45,6 @@ export default class CsvUtils {
         )
         .on(`end`, () => {
           try {
-            fills.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
             resolve(fills);
           } catch (error) {
             reject(error);

@@ -1,8 +1,9 @@
+import { ExchangesSupported } from './src/configs/exchange.config';
 import dotenv from "dotenv";
 
 dotenv.config();
 
-import { executeCsv } from "./src/controllers/cli.controller";
+import { executeCsv, executeExchange } from "./src/controllers/cli.controller";
 
 import yargs from "yargs/yargs";
 import { hideBin } from "yargs/helpers";
@@ -24,17 +25,8 @@ yargs(hideBin(process.argv))
     (yargs) =>
       yargs.positional(`exchange`, {
         describe: `Supported exchange flag`,
-        default: `coinbase`,
+        default: ExchangesSupported.Coinbase,
       }),
-    (argv) => {
-      switch (argv.exchange) {
-        case `coinbase`:
-          console.debug({ process });
-          break;
-
-        default:
-          throw new Error(`Not supported Exchange`); // TODO: Set in model
-      }
-    }
+    (argv) => executeExchange(argv.exchange)
   )
   .parse();

@@ -1,4 +1,4 @@
-import { FillSideEnum } from "../models/Exchange.models";
+import { FillSideEnum } from "../models/Fill.models";
 import GenericError from "./generic.error";
 
 export class FillError extends GenericError {

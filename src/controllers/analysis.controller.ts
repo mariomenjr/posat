@@ -1,7 +1,7 @@
 import Table from "cli-table3";
 
 import { PositionArray, PositionBuilder } from "./../models/Position.models";
-import { FillArray } from "./../models/Exchange.models";
+import { FillArray } from "../models/Fill.models";
 import { roundByDecimals } from "../utils/math.utils";
 
 export function buildPositions(fills: FillArray): PositionArray {
@@ -45,4 +45,11 @@ export function printBreakEven(positions: PositionArray): void {
   t.push([`$ ${positions.breakEven}`]);
 
   console.log(t.toString());
+}
+
+export function reportPositions(fills: FillArray) {
+  const positions = buildPositions(fills);
+
+  printPositions(positions);
+  printBreakEven(positions);
 }
