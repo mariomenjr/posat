@@ -4,12 +4,12 @@ import fs from "fs";
 import { FillArray, Fill } from "./../models/Exchange.models";
 
 export default class CsvUtils {
-  static readFills(): Promise<FillArray> {
+  static readFills(fileOrFolderPath: string): Promise<FillArray> {
     return new Promise<FillArray>((resolve, reject) => {
       const fills: FillArray = new FillArray();
 
       // TODO: We may want to read all fills files available.
-      fs.createReadStream(`./fills/fills.20211205.1247.csv`)
+      fs.createReadStream(fileOrFolderPath) //`./fills/fills.20211205.1247.csv`)
         .pipe(
           csv({
             skipLines: 1,
@@ -51,7 +51,7 @@ export default class CsvUtils {
             reject(error);
           }
         })
-        .on(`error`, (error) => reject(error))
+        .on(`error`, (error) => reject(error));
     });
   }
 }

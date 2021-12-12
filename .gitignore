@@ -1,3 +1,6 @@
+# Configs
+.env*
+
 # Fills
 fills/*.csv
 

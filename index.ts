@@ -1,21 +1,40 @@
-import CsvUtils from "./src/utils/csv.utils";
+import dotenv from "dotenv";
 
-import { FillArray } from "./src/models/Exchange.models";
+dotenv.config();
 
-import {
-  buildPositions,
-  printBreakEven,
-  printPositions,
-} from "./src/controllers/analysis.controller";
+import { executeCsv } from "./src/controllers/cli.controller";
 
-CsvUtils.readFills()
-  .then((fills: FillArray) => {
-    const positions = buildPositions(fills);
+import yargs from "yargs/yargs";
+import { hideBin } from "yargs/helpers";
 
-    printPositions(positions);
-    printBreakEven(positions);
-  })
-  .catch((e: Error) => {
-    console.error(e.message);
-    process.exit();
-  });
+yargs(hideBin(process.argv))
+  .command(
+    `csv [file]`,
+    `Process csv-ed fills`,
+    (yargs) =>
+      yargs.positional(`path`, {
+        describe: `Path for CSV file`,
+        default: `./fills/fills.20211205.1247.csv`,
+      }),
+    (argv) => executeCsv(argv.path)
+  )
+  .command(
+    `exchange [exchange]`,
+    `Process fills from Exchange APIs`,
+    (yargs) =>
+      yargs.positional(`exchange`, {
+        describe: `Supported exchange flag`,
+        default: `coinbase`,
+      }),
+    (argv) => {
+      switch (argv.exchange) {
+        case `coinbase`:
+          console.debug({ process });
+          break;
+
+        default:
+          throw new Error(`Not supported Exchange`); // TODO: Set in model
+      }
+    }
+  )
+  .parse();

@@ -22,3 +22,4 @@ export enum FillSideEnum {
 }
 
 export class FillArray extends Array<Fill> {}
+
