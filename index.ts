@@ -15,7 +15,7 @@ yargs(hideBin(process.argv))
     (yargs) =>
       yargs.positional(`path`, {
         describe: `Path for CSV file`,
-        default: `./fills/fills.20211205.1247.csv`,
+        default: `./fills`,//fills.20211205.1247.csv`,
       }),
     (argv) => executeCsv(argv.path)
   )

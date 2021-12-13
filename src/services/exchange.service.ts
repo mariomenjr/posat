@@ -10,18 +10,6 @@ export class AccountService {
     const accounts = await coinbase.rest.account.listAccounts();
     return accounts.filter((x) => roundByDecimals(Number(x.balance), 8) > 0);
   }
-
-  // static async getAccountHistory(accountId: string): Promise<AccountHistory[]> {
-  //   return (await coinbase.rest.account.getAccountHistory(accountId)).data;
-  // }
-
-  // static async getAccountsHistory(): Promise<AccountHistory[]> {
-  //   const accounts = await AccountService.listAccounts();
-  //   const accountsHistory = await Promise.all(
-  //     accounts.map(async (x) => await AccountService.getAccountHistory(x.id))
-  //   );
-  //   return accountsHistory.reduce<AccountHistory[]>((a, x) => [...a, ...x], []);
-  // }
 }
 
 export class ProductService {

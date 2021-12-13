@@ -1,15 +1,36 @@
 import fs from "fs";
+import path from "path";
 import csv from "csv-parser";
 
 import { FillArray, Fill } from "../models/Fill.models";
 
 export default class CsvUtils {
-  static readFills(fileOrFolderPath: string): Promise<FillArray> {
+  static async readFills(fileOrFolderPath: string): Promise<FillArray> {
+    
+    if (fs.lstatSync(fileOrFolderPath).isDirectory()) {
+      const fillPromises = fs
+        .readdirSync(fileOrFolderPath)
+        .filter((x) => x.toLowerCase().endsWith(`.csv`))
+        .map((filePath) => CsvUtils.readFill(path.join(fileOrFolderPath, filePath)));
+
+      const fills = await Promise.all(fillPromises);
+
+      return fills.reduce((fillArray, _fills) => {
+        fillArray.push(..._fills);
+        return fillArray;
+      }, new FillArray());
+    }
+
+    return CsvUtils.readFill(fileOrFolderPath);
+  }
+
+  static readFill(filePath: string): Promise<FillArray> {
     return new Promise<FillArray>((resolve, reject) => {
       const fills: FillArray = new FillArray();
 
+      // fs.readdirSync()
       // TODO: We may want to read all fills files available.
-      fs.createReadStream(fileOrFolderPath) //`./fills/fills.20211205.1247.csv`)
+      fs.createReadStream(filePath) //`./fills/fills.20211205.1247.csv`)
         .pipe(
           csv({
             skipLines: 1,
