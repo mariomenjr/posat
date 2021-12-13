@@ -28,9 +28,7 @@ export default class CsvUtils {
     return new Promise<FillArray>((resolve, reject) => {
       const fills: FillArray = new FillArray();
 
-      // fs.readdirSync()
-      // TODO: We may want to read all fills files available.
-      fs.createReadStream(filePath) //`./fills/fills.20211205.1247.csv`)
+      fs.createReadStream(filePath)
         .pipe(
           csv({
             skipLines: 1,

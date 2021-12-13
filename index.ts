@@ -1,12 +1,12 @@
-import { ExchangesSupported } from './src/configs/exchange.config';
 import dotenv from "dotenv";
-
 dotenv.config();
-
-import { executeCsv, executeExchange } from "./src/controllers/cli.controller";
 
 import yargs from "yargs/yargs";
 import { hideBin } from "yargs/helpers";
+
+import { executeCsv, executeExchange } from "./src/controllers/cli.controller";
+
+import { ExchangesSupported } from './src/configs/exchange.config';
 
 yargs(hideBin(process.argv))
   .command(

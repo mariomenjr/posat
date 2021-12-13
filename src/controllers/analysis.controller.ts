@@ -12,26 +12,38 @@ export function printPositions(positions: PositionArray): void {
   const t = new Table({
     head: [
       `Unit`,
+      `Portfolio %`,
       `Size`,
       `Break Even Entry`,
-      `Break Even`,
-      `Portfolio Share %`,
+      `Break Even Total`,
     ],
-    colWidths: [15, 15, 20, 30],
+    colWidths: [15, 15, 15, 20, 20],
+    colAligns: [`left`, `left`, `right`, `right`, `right`],
   });
 
   const breakEven = positions.breakEven;
 
-  positions.forEach((x) => {
-    const _breakEven = roundByDecimals(x.size * x.breakEven, 2);
-    t.push([
-      x.sizeUnit,
-      x.size,
-      x.breakEven,
-      `$ ${_breakEven}`,
-      `${roundByDecimals((_breakEven / breakEven) * 100, 2)} %`,
-    ]);
+  positions.sort((x, y) => {
+    if (x.sizeUnit < y.sizeUnit) return -1;
+    if (x.sizeUnit > y.sizeUnit) return +1;
+    
+    return 0;
   });
+
+  positions
+    .filter((x) => x.size > 0)
+    .forEach((x) => {
+      const _breakEven = roundByDecimals(x.size * x.breakEven, 2);
+      t.push([
+        x.sizeUnit,
+        `${roundByDecimals((_breakEven / breakEven) * 100, 2)
+          .toFixed(2)
+          .padStart(5, `0`)} %`,
+        x.size.toFixed(4),
+        x.breakEven.toFixed(4),
+        `${_breakEven.toFixed(2)} $`,
+      ]);
+    });
 
   console.log(t.toString());
 }
