@@ -3,6 +3,7 @@
 
 # Fills
 fills/*.csv
+custom/*.json
 
 # Logs
 logs

@@ -1,11 +1,18 @@
+import { ExchangesSupported } from "./../configs/exchange.config";
+
+import { FillError } from "./../errors/fill.error";
+
 import CsvUtils from "../utils/csv.utils";
+import { isIntegerArray, hasFillProps } from "../utils/validators";
 
 import { FillService } from "./../services/exchange.service";
-import { ExchangesSupported } from "./../configs/exchange.config";
 
 import { reportPositions } from "./analysis.controller";
 
 import { FillSideEnum, Fill, FillArray } from "./../models/Fill.models";
+
+import fillsPushJson from "../../custom/fills.push.json";
+import fillsIgnoreJson from "../../custom/fills.ignore.json";
 
 export async function executeCsv(csvPath: string): Promise<void> {
   const fills = await CsvUtils.readFills(csvPath);
@@ -16,28 +23,51 @@ export async function executeCsv(csvPath: string): Promise<void> {
 export async function executeExchange(es: ExchangesSupported): Promise<void> {
   const fills: Fill[] = [];
 
+  if (!isIntegerArray(fillsIgnoreJson)) throw FillError.fillIgnoreJsonNotSupported();
+  if (!hasFillProps(fillsPushJson)) throw FillError.fillPushJsonNotSupported();
+
   switch (es) {
     case ExchangesSupported.Coinbase:
       const onlineFillsByAccount = await FillService.getFillsListedByAccounts();
       fills.push(
-        ...onlineFillsByAccount.reduce<FillArray>(
-          (fills, current) => [
-            ...fills,
-            ...current.fills.map((fill) => ({
-              portfolio: current.account.profile_id,
-              tradeId: Number(fill.trade_id),
-              product: fill.product_id,
-              side: fill.side.toUpperCase() as FillSideEnum,
-              createdAt: new Date(fill.created_at),
-              fiatUnit: `USD`,
-              size: Number(fill.size),
-              sizeUnit: current.account.currency,
-              price: Number(fill.price),
-              fee: Number(fill.fee),
-              total: Number(fill.usd_volume),
-            })),
-          ],
-          new FillArray()
+        ...onlineFillsByAccount
+          .reduce<FillArray>(
+            (fills, current) => [
+              ...fills,
+              ...current.fills.map((fill) => ({
+                portfolio: current.account.profile_id,
+                tradeId: Number(fill.trade_id),
+                product: fill.product_id,
+                side: fill.side.toUpperCase() as FillSideEnum,
+                createdAt: new Date(fill.created_at),
+                fiatUnit: `USD`,
+                size: Number(fill.size),
+                sizeUnit: current.account.currency,
+                price: Number(fill.price),
+                fee: Number(fill.fee),
+                total: Number(fill.usd_volume),
+              })),
+            ],
+            new FillArray()
+          )
+          .filter((x) => !fillsIgnoreJson.includes(x.tradeId))
+      );
+
+      fills.push(
+        ...fillsPushJson.map(
+          (x): Fill => ({
+            portfolio: x.portfolio,
+            tradeId: Number(x.tradeId),
+            product: x.product,
+            side: x.side.toUpperCase() as FillSideEnum,
+            createdAt: new Date(x.createdAt),
+            fiatUnit: `USD`,
+            size: x.size,
+            sizeUnit: x.sizeUnit,
+            price: x.price,
+            fee: x.fee,
+            total: x.total,
+          })
         )
       );
       break;
