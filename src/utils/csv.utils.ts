@@ -73,3 +73,10 @@ export default class CsvUtils {
     });
   }
 }
+
+export class JsonUtils {
+  static async readJson(jsonPath: string) {
+    const r = fs.readFileSync(path.resolve(__dirname, jsonPath));
+    return JSON.parse(r.toString());
+  }
+}

@@ -2,7 +2,7 @@ import { ExchangesSupported } from "./../configs/exchange.config";
 
 import { FillError } from "./../errors/fill.error";
 
-import CsvUtils from "../utils/csv.utils";
+import CsvUtils, { JsonUtils } from "../utils/csv.utils";
 import { isIntegerArray, hasFillProps } from "../utils/validators";
 
 import { FillService } from "./../services/exchange.service";
@@ -10,9 +10,6 @@ import { FillService } from "./../services/exchange.service";
 import { reportPositions } from "./analysis.controller";
 
 import { FillSideEnum, Fill, FillArray } from "./../models/Fill.models";
-
-import fillsPushJson from "../../custom/fills.push.json";
-import fillsIgnoreJson from "../../custom/fills.ignore.json";
 
 export async function executeCsv(csvPath: string): Promise<void> {
   const fills = await CsvUtils.readFills(csvPath);
@@ -23,7 +20,10 @@ export async function executeCsv(csvPath: string): Promise<void> {
 export async function executeExchange(es: ExchangesSupported): Promise<void> {
   const fills: Fill[] = [];
 
+  const fillsIgnoreJson:number[] = await JsonUtils.readJson("../../custom/fills.ignore.json");
   if (!isIntegerArray(fillsIgnoreJson)) throw FillError.fillIgnoreJsonNotSupported();
+  
+  const fillsPushJson:Fill[] = await JsonUtils.readJson("../../custom/fills.push.json");
   if (!hasFillProps(fillsPushJson)) throw FillError.fillPushJsonNotSupported();
 
   switch (es) {
