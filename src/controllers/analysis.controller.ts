@@ -15,7 +15,7 @@ export function printPositions(positions: PositionArray): void {
       `Portfolio %`,
       `Size`,
       `Break Even Entry`,
-      `Break Even Total`,
+      `Position in USD`,
     ],
     colWidths: [15, 15, 15, 20, 20],
     colAligns: [`left`, `left`, `right`, `right`, `right`],
