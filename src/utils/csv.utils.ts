@@ -76,7 +76,12 @@ export default class CsvUtils {
 
 export class JsonUtils {
   static async readJson(jsonPath: string) {
-    const r = fs.readFileSync(path.resolve(__dirname, jsonPath));
-    return JSON.parse(r.toString());
+    try {
+      const r = fs.readFileSync(path.resolve(__dirname, jsonPath));
+      return JSON.parse(r.toString());
+    } catch (error) {
+      console.log(`[warn] ${(error as Error).message}`);
+      return null;
+    }
   }
 }

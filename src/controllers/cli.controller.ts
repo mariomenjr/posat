@@ -20,10 +20,10 @@ export async function executeCsv(csvPath: string): Promise<void> {
 export async function executeExchange(es: ExchangesSupported): Promise<void> {
   const fills: Fill[] = [];
 
-  const fillsIgnoreJson:number[] = await JsonUtils.readJson("../../custom/fills.ignore.json");
+  const fillsIgnoreJson:number[] = (await JsonUtils.readJson("../../custom/fills.ignore.json")) ?? [];
   if (!isIntegerArray(fillsIgnoreJson)) throw FillError.fillIgnoreJsonNotSupported();
   
-  const fillsPushJson:Fill[] = await JsonUtils.readJson("../../custom/fills.push.json");
+  const fillsPushJson:Fill[] = (await JsonUtils.readJson("../../custom/fills.push.json")) ?? [];
   if (!hasFillProps(fillsPushJson)) throw FillError.fillPushJsonNotSupported();
 
   switch (es) {

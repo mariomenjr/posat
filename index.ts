@@ -7,6 +7,7 @@ import { hideBin } from "yargs/helpers";
 import { executeCsv, executeExchange } from "./src/controllers/cli.controller";
 
 import { ExchangesSupported } from './src/configs/exchange.config';
+import { safeGuard } from "./src/utils/system.utils";
 
 yargs(hideBin(process.argv))
   .command(
@@ -15,9 +16,9 @@ yargs(hideBin(process.argv))
     (yargs) =>
       yargs.positional(`path`, {
         describe: `Path for CSV file`,
-        default: `./fills`,//fills.20211205.1247.csv`,
+        default: `./fills`,
       }),
-    (argv) => executeCsv(argv.path)
+    (argv) => safeGuard(() => executeCsv(argv.path))
   )
   .command(
     `exchange [exchange]`,
@@ -27,6 +28,6 @@ yargs(hideBin(process.argv))
         describe: `Supported exchange flag`,
         default: ExchangesSupported.Coinbase,
       }),
-    (argv) => executeExchange(argv.exchange)
+    (argv) => safeGuard(() => executeExchange(argv.exchange))
   )
   .parse();
