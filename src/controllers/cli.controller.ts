@@ -3,7 +3,7 @@ import { ExchangesSupported } from "./../configs/exchange.config";
 import { FillError } from "./../errors/fill.error";
 
 import CsvUtils, { JsonUtils } from "../utils/csv.utils";
-import { isIntegerArray, hasFillProps } from "../utils/validators";
+import { isIntegerArray, hasFillProps } from "../utils/validators.utils";
 
 import { FillService } from "./../services/exchange.service";
 

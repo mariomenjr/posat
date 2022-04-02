@@ -8,6 +8,9 @@ import { executeCsv, executeExchange } from "./src/controllers/cli.controller";
 
 import { ExchangesSupported } from './src/configs/exchange.config';
 import { safeGuard } from "./src/utils/system.utils";
+import { exitIfNoDotenv } from "./src/utils/validators.utils";
+
+exitIfNoDotenv();
 
 yargs(hideBin(process.argv))
   .command(
