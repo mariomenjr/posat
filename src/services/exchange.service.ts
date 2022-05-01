@@ -1,4 +1,4 @@
-import { Account, AccountHistory, Product, Fill } from "coinbase-pro-node";
+import { Account, Product, Fill } from "coinbase-pro-node";
 
 import { coinbase } from "../exchanges/conibase.exchange";
 import { roundByDecimals } from "../utils/math.utils";
