@@ -1,6 +1,6 @@
 import { Account, Product, Fill } from "coinbase-pro-node";
 
-import { coinbase } from "../exchanges/conibase.exchange";
+import { coinbase } from "../exchanges/coinbase-pro.exchange";
 import { roundByDecimals } from "../utils/math.utils";
 
 // TODO: Deal with pagination
