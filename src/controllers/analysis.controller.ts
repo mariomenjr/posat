@@ -72,7 +72,7 @@ export function printPositions(positions: PositionArray): void {
 
 export function printBreakEven(positions: PositionArray): void {
   const t = new Table({
-    head: [`Break Even`],
+    head: [`Invested Amount`],
     colWidths: [20],
   });
 

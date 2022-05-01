@@ -3,7 +3,8 @@
 Build a positions report from Fills in Coinbase.
 
 ![Portfolio Sample](./assets/portfolio.sample.png)
-<sub>Size, Break Even Entry, and Position in USD field were hidden due to privacy matters.</sub>
+
+<sub>Size, Average Cost, and Invested Amount fields were hidden due to privacy matters.</sub>
 
 ## Usage
 
