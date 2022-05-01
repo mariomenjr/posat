@@ -2,8 +2,8 @@
 
 Build a positions report from Fills in Coinbase.
 
-![Portfolio Sample](./assets/portfolio.sample.png)
 
+<img src="./assets/portfolio.sample.png" alt="Portfolio Sample" width="100%"/>
 <sub>Size, Average Cost, and Invested Amount fields were hidden due to privacy matters.</sub>
 
 ## Usage
