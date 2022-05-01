@@ -250,7 +250,7 @@ class PositionBlocksMap extends Map<string, PositionBlocks> {
   }
 
   buildPositions(): PositionArray {
-    const excludes: string[] = [`USDT`, `USDC`];
+    const excludes: string[] = [];
     const positions: PositionArray = new PositionArray();
 
     for (const [sizeUnit, positionBlocks] of this) {
