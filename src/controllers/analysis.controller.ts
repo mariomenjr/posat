@@ -130,7 +130,7 @@ export function printBreakEven(
   t.push([
     `${positions.breakEven} $`,
     `${holdingAmount} $`,
-    `${getHumanGainRate(gainRate)} %`,
+    `${roundByDecimals(getHumanGainRate(gainRate), 2)} %`,
   ]);
 
   console.log(t.toString());

@@ -1,4 +1,4 @@
-# Posat
+# mariomenjr/posat
 
 Build a positions report from Fills in Coinbase.
 
