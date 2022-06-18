@@ -1,5 +1,4 @@
 import Table from "cli-table3";
-import undici from "undici";
 
 import { PositionArray, PositionBuilder } from "./../models/Position.models";
 import { FillArray } from "../models/Fill.models";
